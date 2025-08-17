@@ -140,6 +140,27 @@
   .tab-btn:not(:first-child):not(:last-child) { border-radius: 0; border-left: none; }
   .tab-btn:last-child { border-top-left-radius: 0; border-bottom-left-radius: 0; border-left: none; }
   
+  /* Analysis Tab Content */
+  .analysis-tab-content {
+    min-height: 100px;
+  }
+  
+  /* Analysis sub-tab buttons */
+  [data-analysis-tab] {
+    font-size: 14px;
+    padding: 8px 16px;
+  }
+  
+  /* Analysis content spacing */
+  .analysis-tab-content .analysis {
+    line-height: 1.6;
+  }
+  
+  .analysis-tab-content small.muted {
+    font-size: 12px;
+    opacity: 0.7;
+  }
+  
   /* Fixed Footer */
   footer {
     position: fixed;
@@ -218,6 +239,7 @@
     transition: border-color 0.2s ease;
     box-sizing: border-box;
     background: var(--bg);
+    color: var(--text);
   }
   
   .form-group input:focus {
@@ -376,7 +398,35 @@
                 <span class="muted">Executive summary narrative</span>
               </div>
               <div class="panel-body">
-                <div id="analysisText" class="analysis"></div>
+                <!-- Analysis Sub-tabs -->
+                <div class="controls" style="gap: 0; margin-bottom: 16px;">
+                  <button class="tab-btn active" data-analysis-tab="exec-summary" onclick="switchAnalysisTab('exec-summary')">Summary</button>
+                  <button class="tab-btn" data-analysis-tab="income-analysis" onclick="switchAnalysisTab('income-analysis')">Income Analysis</button>
+                  <button class="tab-btn" data-analysis-tab="expense-analysis" onclick="switchAnalysisTab('expense-analysis')">Cost Analysis</button>
+                </div>
+                
+                <!-- Analysis Tab Content -->
+                <div id="analysis-exec-summary" class="analysis-tab-content">
+                  <div id="analysisText" class="analysis"></div>
+                  <br>
+                  <small class="muted">To populate this tab with custom data from your n8n workflow, call: window.populateAnalysisTabs({executiveSummary: "Your custom executive summary text here"})</small>
+                </div>
+                
+                <div id="analysis-income-analysis" class="analysis-tab-content" style="display: none;">
+                  <div id="incomeAnalysisText" class="analysis">
+                    Income analysis will be populated when data is refreshed from the n8n workflow.
+                    <br><br>
+                    <small class="muted">To populate this tab with custom data from your n8n workflow, call: window.populateAnalysisTabs({incomeAnalysis: "Your custom income analysis text here"})</small>
+                  </div>
+                </div>
+                
+                <div id="analysis-expense-analysis" class="analysis-tab-content" style="display: none;">
+                  <div id="expenseAnalysisText" class="analysis">
+                    Expense analysis will be populated when data is refreshed from the n8n workflow.
+                    <br><br>
+                    <small class="muted">To populate this tab with custom data from your n8n workflow, call: window.populateAnalysisTabs({expenseAnalysis: "Your custom expense analysis text here"})</small>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -970,6 +1020,58 @@
       `.replace(/\s+/g,' ').trim();
       document.getElementById("analysisText").textContent = text;
     }
+    
+    function renderIncomeAnalysis(){
+      if(!currentMonthKey || !monthSeries.length) { 
+        document.getElementById("incomeAnalysisText").textContent = "No data available for income analysis."; 
+        return; 
+      }
+      const idx = indexOfMonth(currentMonthKey);
+      const m = monthSeries[idx];
+      const prev = idx>0 ? monthSeries[idx-1] : null;
+      const growthTI = prev ? (m.tradingIncome - prev.tradingIncome) / (prev.tradingIncome || 1) : 0;
+      const growthOI = prev ? (m.otherIncome - prev.otherIncome) / (prev.otherIncome || 1) : 0;
+      const totalIncome = m.tradingIncome + m.otherIncome;
+      const accountRows = buildAccountRows(currentMonthKey);
+      const incomeAccounts = accountRows.filter(r => r.value > 0);
+      
+      const text = `
+        <strong>Income Analysis for ${m.label}</strong><br><br>
+        <strong>Total Income:</strong> ${currency(totalIncome)}<br>
+        <strong>Trading Income:</strong> ${currency(m.tradingIncome)} ${prev ? `(${growthTI>=0?"▲":"▼"} ${percent(growthTI)})` : ""}<br>
+        <strong>Other Income:</strong> ${currency(m.otherIncome)} ${prev ? `(${growthOI>=0?"▲":"▼"} ${percent(growthOI)})` : ""}<br><br>
+        <strong>Top Income Accounts:</strong><br>
+        ${incomeAccounts.slice(0, 5).map((acc, i) => `${i+1}. ${acc.account} (${acc.section}): ${currency(acc.value)}`).join('<br>')}<br><br>
+        <strong>Income Composition:</strong> Trading Income represents ${percent(m.tradingIncome / totalIncome)} of total income, while Other Income contributes ${percent(m.otherIncome / totalIncome)}.
+      `.replace(/\s+/g,' ').trim();
+      document.getElementById("incomeAnalysisText").innerHTML = text;
+    }
+    
+    function renderExpenseAnalysis(){
+      if(!currentMonthKey || !monthSeries.length) { 
+        document.getElementById("expenseAnalysisText").textContent = "No data available for expense analysis."; 
+        return; 
+      }
+      const idx = indexOfMonth(currentMonthKey);
+      const m = monthSeries[idx];
+      const prev = idx>0 ? monthSeries[idx-1] : null;
+      const growthOE = prev ? (m.operatingExpenses - prev.operatingExpenses) / (prev.operatingExpenses || 1) : 0;
+      const growthCS = prev ? (m.costOfSales - prev.costOfSales) / (prev.costOfSales || 1) : 0;
+      const totalExpenses = m.operatingExpenses + m.costOfSales;
+      const accountRows = buildAccountRows(currentMonthKey);
+      const expenseAccounts = accountRows.filter(r => r.value < 0).map(r => ({...r, value: Math.abs(r.value)}));
+      
+      const text = `
+        <strong>Expense Analysis for ${m.label}</strong><br><br>
+        <strong>Total Expenses:</strong> ${currency(totalExpenses)}<br>
+        <strong>Operating Expenses:</strong> ${currency(m.operatingExpenses)} ${prev ? `(${growthOE>=0?"▲":"▼"} ${percent(growthOE)})` : ""}<br>
+        <strong>Cost of Sales:</strong> ${currency(m.costOfSales)} ${prev ? `(${growthCS>=0?"▲":"▼"} ${percent(growthCS)})` : ""}<br><br>
+        <strong>Top Expense Accounts:</strong><br>
+        ${expenseAccounts.slice(0, 5).map((acc, i) => `${i+1}. ${acc.account} (${acc.section}): ${currency(acc.value)}`).join('<br>')}<br><br>
+        <strong>Expense Composition:</strong> Operating Expenses represent ${percent(m.operatingExpenses / totalExpenses)} of total expenses, while Cost of Sales contributes ${percent(m.costOfSales / totalExpenses)}.
+      `.replace(/\s+/g,' ').trim();
+      document.getElementById("expenseAnalysisText").innerHTML = text;
+    }
 
     function updateExecutive(){
       populateMonthSelects();
@@ -977,6 +1079,8 @@
       renderTrendChart();
       renderMixChart();
       renderAnalysis();
+      renderIncomeAnalysis();
+      renderExpenseAnalysis();
     }
 
     prevMonthBtn.addEventListener("click", ()=>{
@@ -1543,35 +1647,234 @@
       }
     });
 
-    window.loadDashboardData = function(rowsArray){
-      console.log('loadDashboardData function called with:', rowsArray);
-      if(!Array.isArray(rowsArray)) {
+    window.loadDashboardData = function(rowsArray, analysisData){
+      console.log('loadDashboardData function called with:', rowsArray, 'and analysis data:', analysisData);
+      
+      // Handle rows data
+      if(Array.isArray(rowsArray)) {
+        console.log('Processing', rowsArray.length, 'rows');
+        
+        rows = rowsArray.map(r=>({
+          financialYear: r['Financial Year'] ?? r.financialYear,
+          quarter: r['Quarter'] ?? r.quarter,
+          calendarYear: Number(r['Calendar Year'] ?? r.calendarYear),
+          month: r['Month'] ?? r.month,
+          monthNum: Number(r['Month Number'] ?? r.monthNum ?? r['Month Num']),
+          value: Number(String(r['Value'] ?? r.value).replace(/[$,\s]/g,''))||0,
+          section: r['Section'] ?? r.section,
+          account: r['Account'] ?? r.account,
+        })).filter(r=>r.calendarYear && r.monthNum);
+        
+        console.log('Processed rows:', rows.length);
+        monthSeries = computeMonthSeries(rows);
+        currentMonthKey = monthSeries.length ? monthSeries[monthSeries.length-1].key : null;
+        updateExecutive();
+        populateSectionSelect();
+        updateDetail();
+        console.log('Dashboard updated successfully');
+      } else {
         console.error('loadDashboardData: rowsArray is not an array:', rowsArray);
-        return;
       }
-      console.log('Processing', rowsArray.length, 'rows');
       
-      rows = rowsArray.map(r=>({
-        financialYear: r['Financial Year'] ?? r.financialYear,
-        quarter: r['Quarter'] ?? r.quarter,
-        calendarYear: Number(r['Calendar Year'] ?? r.calendarYear),
-        month: r['Month'] ?? r.month,
-        monthNum: Number(r['Month Number'] ?? r.monthNum ?? r['Month Num']),
-        value: Number(String(r['Value'] ?? r.value).replace(/[$,\s]/g,''))||0,
-        section: r['Section'] ?? r.section,
-        account: r['Account'] ?? r.account,
-      })).filter(r=>r.calendarYear && r.monthNum);
+      // Handle analysis data if provided
+      if (analysisData && typeof analysisData === 'object') {
+        console.log('Processing analysis data:', analysisData);
+        
+        const analysisOutputs = extractAnalysisData(analysisData);
+        
+        // If we found any analysis outputs, populate the tabs
+        if (Object.keys(analysisOutputs).length > 0) {
+          console.log('Found analysis outputs:', analysisOutputs);
+          if (typeof window.populateAnalysisTabs === 'function') {
+            window.populateAnalysisTabs(analysisOutputs);
+          } else {
+            // Fallback: directly update the DOM elements
+            if (analysisOutputs.executiveSummary) {
+              document.getElementById("analysisText").innerHTML = analysisOutputs.executiveSummary;
+            }
+            if (analysisOutputs.incomeAnalysis) {
+              document.getElementById("incomeAnalysisText").innerHTML = analysisOutputs.incomeAnalysis;
+            }
+            if (analysisOutputs.expenseAnalysis) {
+              document.getElementById("expenseAnalysisText").innerHTML = analysisOutputs.expenseAnalysis;
+            }
+          }
+          console.log('Analysis tabs populated with analysis data');
+        }
+      }
+    }
+    
+    // Function to populate analysis tabs with data from n8n workflow
+    window.populateAnalysisTabs = function(analysisData) {
+      console.log('populateAnalysisTabs called with:', analysisData);
       
-      console.log('Processed rows:', rows.length);
-      monthSeries = computeMonthSeries(rows);
-      currentMonthKey = monthSeries.length ? monthSeries[monthSeries.length-1].key : null;
-      updateExecutive();
-      populateSectionSelect();
-      updateDetail();
-      console.log('Dashboard updated successfully');
+      if (analysisData && typeof analysisData === 'object') {
+        // Populate Executive Summary tab
+        if (analysisData.executiveSummary) {
+          document.getElementById("analysisText").innerHTML = analysisData.executiveSummary;
+        }
+        
+        // Populate Income Analysis tab
+        if (analysisData.incomeAnalysis) {
+          document.getElementById("incomeAnalysisText").innerHTML = analysisData.incomeAnalysis;
+        }
+        
+        // Populate Expense Analysis tab
+        if (analysisData.expenseAnalysis) {
+          document.getElementById("expenseAnalysisText").innerHTML = analysisData.expenseAnalysis;
+        }
+        
+        console.log('Analysis tabs populated successfully');
+      } else {
+        console.warn('No analysis data provided or invalid format');
+      }
+    }
+    
+    // Helper function to extract analysis data from various n8n output formats
+    function extractAnalysisData(data) {
+      const analysisOutputs = {};
+      
+      console.log('extractAnalysisData called with:', data);
+      console.log('Data type:', typeof data);
+      console.log('Data keys:', Object.keys(data || {}));
+      
+      if (!data || typeof data !== 'object') {
+        console.log('Data is not an object, returning empty');
+        return analysisOutputs;
+      }
+      
+      // Look for the specific output fields from your n8n workflow
+      if (data.Summary) {
+        console.log('Found Summary field:', data.Summary.substring(0, 100) + '...');
+        analysisOutputs.executiveSummary = data.Summary;
+      }
+      if (data['Income Analysis - Summary']) {
+        console.log('Found Income Analysis - Summary field:', data['Income Analysis - Summary'].substring(0, 100) + '...');
+        analysisOutputs.incomeAnalysis = data['Income Analysis - Summary'];
+      }
+      if (data['Cost Analysis - Summary']) {
+        console.log('Found Cost Analysis - Summary field:', data['Cost Analysis - Summary'].substring(0, 100) + '...');
+        analysisOutputs.expenseAnalysis = data['Cost Analysis - Summary'];
+      }
+      
+      // Also check for alternative field names that might be used
+      if (data['Executive Summary']) {
+        console.log('Found Executive Summary field:', data['Executive Summary'].substring(0, 100) + '...');
+        analysisOutputs.executiveSummary = data['Executive Summary'];
+      }
+      if (data['Income Analysis']) {
+        console.log('Found Income Analysis field:', data['Income Analysis'].substring(0, 100) + '...');
+        analysisOutputs.incomeAnalysis = data['Income Analysis'];
+      }
+      if (data['Expense Analysis']) {
+        console.log('Found Expense Analysis field:', data['Expense Analysis'].substring(0, 100) + '...');
+        analysisOutputs.expenseAnalysis = data['Expense Analysis'];
+      }
+      
+      // Check for common n8n output field names
+      if (data.summary) {
+        console.log('Found summary field (lowercase):', data.summary.substring(0, 100) + '...');
+        analysisOutputs.executiveSummary = data.summary;
+      }
+      if (data['income analysis - summary']) {
+        console.log('Found income analysis - summary field (lowercase):', data['income analysis - summary'].substring(0, 100) + '...');
+        analysisOutputs.incomeAnalysis = data['income analysis - summary'];
+      }
+      if (data['cost analysis - summary']) {
+        console.log('Found cost analysis - summary field (lowercase):', data['cost analysis - summary'].substring(0, 100) + '...');
+        analysisOutputs.expenseAnalysis = data['cost analysis - summary'];
+      }
+      
+      // Check if data is nested in a different structure
+      if (data.data && typeof data.data === 'object') {
+        console.log('Found nested data.data structure');
+        const nestedData = extractAnalysisData(data.data);
+        Object.assign(analysisOutputs, nestedData);
+      }
+      
+      // Check if data is in an array format
+      if (Array.isArray(data)) {
+        console.log('Data is an array, processing each item');
+        data.forEach((item, index) => {
+          if (item && typeof item === 'object') {
+            console.log(`Processing array item ${index}:`, Object.keys(item || {}));
+            const itemData = extractAnalysisData(item);
+            Object.assign(analysisOutputs, itemData);
+          }
+        });
+      }
+      
+      // Check for any other fields that might contain analysis data
+      for (const key in data) {
+        if (key.toLowerCase().includes('summary') || key.toLowerCase().includes('analysis')) {
+          console.log(`Found potential analysis field "${key}":`, typeof data[key], data[key]);
+        }
+      }
+      
+      // If still no outputs found, try to extract from any text fields that look like analysis
+      if (Object.keys(analysisOutputs).length === 0) {
+        console.log('No specific analysis fields found, checking for text content...');
+        for (const key in data) {
+          if (typeof data[key] === 'string' && data[key].length > 100) {
+            const text = data[key].toLowerCase();
+            if (text.includes('income') || text.includes('revenue') || text.includes('sales')) {
+              console.log(`Found potential income analysis in "${key}"`);
+              analysisOutputs.incomeAnalysis = data[key];
+            } else if (text.includes('cost') || text.includes('expense') || text.includes('expenditure')) {
+              console.log(`Found potential cost analysis in "${key}"`);
+              analysisOutputs.expenseAnalysis = data[key];
+            } else if (text.includes('summary') || text.includes('overview') || text.includes('performance')) {
+              console.log(`Found potential executive summary in "${key}"`);
+              analysisOutputs.executiveSummary = data[key];
+            }
+          }
+        }
+      }
+      
+      console.log('Final analysis outputs:', analysisOutputs);
+      return analysisOutputs;
     }
     
     console.log('loadDashboardData function defined:', typeof window.loadDashboardData);
+    
+    // Test function to manually populate analysis tabs (for debugging)
+    window.testAnalysisTabs = function() {
+      console.log('Testing analysis tabs population...');
+      
+      const testData = {
+        'Summary': 'This is a test executive summary content from the n8n workflow.',
+        'Income Analysis - Summary': 'This is a test income analysis content from the n8n workflow.',
+        'Cost Analysis - Summary': 'This is a test cost analysis content from the n8n workflow.'
+      };
+      
+      console.log('Test data:', testData);
+      
+      if (typeof window.populateAnalysisTabs === 'function') {
+        window.populateAnalysisTabs(testData);
+        console.log('Analysis tabs populated with test data');
+        alert('Test data populated in analysis tabs!');
+      } else {
+        console.error('populateAnalysisTabs function not found');
+      }
+    };
+    
+    // Function to manually test with your actual n8n data structure
+    window.debugN8nData = function() {
+      console.log('=== DEBUGGING N8N DATA STRUCTURE ===');
+      console.log('This function will help you see what data structure your n8n workflow is returning.');
+      console.log('After clicking Data Refresh, check the console for detailed information.');
+      console.log('Look for:');
+      console.log('1. "Raw data structure from n8n:" - shows the exact data received');
+      console.log('2. "Data keys:" - shows all available field names');
+      console.log('3. "Full data structure:" - shows the complete JSON response');
+      console.log('4. "Analysis outputs after checking nested structures:" - shows what was extracted');
+      
+      alert('Debug mode enabled. Click Data Refresh and check the console for detailed information about your n8n data structure.');
+    };
+    
+    console.log('Test functions available:');
+    console.log('- window.testAnalysisTabs() - Test with sample data');
+    console.log('- window.debugN8nData() - Enable detailed debugging');
 
     async function fetchFromN8n(){
       console.log('fetchFromN8n function called');
@@ -1600,6 +1903,10 @@
           alert('Workflow returned no data. Please check the n8n workflow configuration.');
           return; 
         }
+        
+        console.log('Raw data structure from n8n:', data);
+        console.log('Data type:', typeof data);
+        console.log('Data keys:', Object.keys(data || {}));
         
         let incomingRows = null;
         if(Array.isArray(data)){
@@ -1646,6 +1953,84 @@
           }
         }
         
+        // Check for analysis outputs and populate the tabs
+        console.log('=== ANALYSIS DATA EXTRACTION ===');
+        console.log('Raw data for analysis extraction:', data);
+        
+        // First, try to extract analysis data from the main response
+        let analysisOutputs = extractAnalysisData(data);
+        console.log('Initial extracted analysis outputs:', analysisOutputs);
+        
+        // If no analysis outputs found in main data, check if it's nested differently
+        if (Object.keys(analysisOutputs).length === 0) {
+          console.log('No analysis outputs found in main data, checking for nested structures...');
+          
+          // Check if data is wrapped in a different structure
+          if (data.result && typeof data.result === 'object') {
+            console.log('Found data.result structure, extracting from there...');
+            analysisOutputs = extractAnalysisData(data.result);
+          } else if (data.output && typeof data.output === 'object') {
+            console.log('Found data.output structure, extracting from there...');
+            analysisOutputs = extractAnalysisData(data.output);
+          } else if (data.response && typeof data.response === 'object') {
+            console.log('Found data.response structure, extracting from there...');
+            analysisOutputs = extractAnalysisData(data.response);
+          }
+          
+          console.log('Analysis outputs after checking nested structures:', analysisOutputs);
+        }
+        
+        // If we found any analysis outputs, populate the tabs
+        if (Object.keys(analysisOutputs).length > 0) {
+          console.log('Found analysis outputs:', analysisOutputs);
+          
+          // Force populate the tabs immediately
+          if (analysisOutputs.executiveSummary) {
+            console.log('Populating Executive Summary with:', analysisOutputs.executiveSummary);
+            document.getElementById("analysisText").innerHTML = analysisOutputs.executiveSummary;
+          }
+          if (analysisOutputs.incomeAnalysis) {
+            console.log('Populating Income Analysis with:', analysisOutputs.incomeAnalysis);
+            document.getElementById("incomeAnalysisText").innerHTML = analysisOutputs.incomeAnalysis;
+          }
+          if (analysisOutputs.expenseAnalysis) {
+            console.log('Populating Cost Analysis with:', analysisOutputs.expenseAnalysis);
+            document.getElementById("expenseAnalysisText").innerHTML = analysisOutputs.expenseAnalysis;
+          }
+          
+          console.log('Analysis tabs populated with webhook data');
+          
+          // Show success message for analysis data
+          const analysisCount = Object.keys(analysisOutputs).length;
+          const analysisNames = Object.keys(analysisOutputs).map(key => {
+            if (key === 'executiveSummary') return 'Executive Summary';
+            if (key === 'incomeAnalysis') return 'Income Analysis';
+            if (key === 'expenseAnalysis') return 'Cost Analysis';
+            return key;
+          }).join(', ');
+          
+          console.log(`Successfully populated ${analysisCount} analysis tab(s): ${analysisNames}`);
+          
+          // Show alert to user
+          alert(`Analysis tabs updated: ${analysisNames}`);
+        } else {
+          console.log('No analysis outputs found in webhook data');
+          console.log('Available data keys:', Object.keys(data || {}));
+          
+          // Show the actual data structure to help debug
+          console.log('Full data structure:', JSON.stringify(data, null, 2));
+          
+          // Try to find any text content that might be analysis data
+          for (const key in data) {
+            if (typeof data[key] === 'string' && data[key].length > 50) {
+              console.log(`Found potential analysis data in key "${key}":`, data[key].substring(0, 100) + '...');
+            }
+          }
+          
+          // Alert user that no analysis data was found
+          alert('No analysis data found in the webhook response. Check the console for details.');
+        }
+        
       } catch (e){
         console.error('Error fetching from n8n workflow:', e);
         alert(`Error: ${e.message}`);
@@ -1678,6 +2063,35 @@
         console.log('Tab switched to:', targetTab);
       } else {
         console.error('Target section not found for tab:', targetTab);
+      }
+    }
+    
+    // Analysis tab switching functionality
+    function switchAnalysisTab(targetTab) {
+      console.log('switchAnalysisTab called with:', targetTab);
+      
+      // Update analysis tab button states
+      const analysisTabButtons = document.querySelectorAll('[data-analysis-tab]');
+      analysisTabButtons.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.getAttribute('data-analysis-tab') === targetTab) {
+          btn.classList.add('active');
+        }
+      });
+      
+      // Update analysis tab content visibility
+      const analysisTabContents = document.querySelectorAll('.analysis-tab-content');
+      analysisTabContents.forEach(content => {
+        content.style.display = 'none';
+      });
+      
+      const targetContent = document.getElementById(`analysis-${targetTab}`);
+      console.log('Target analysis content:', targetContent);
+      if (targetContent) {
+        targetContent.style.display = 'block';
+        console.log('Analysis tab switched to:', targetTab);
+      } else {
+        console.error('Target analysis content not found for tab:', targetTab);
       }
     }
     
@@ -1730,6 +2144,7 @@
       populateSectionSelect();
       updateDetail();
       console.log('Init complete. loadDashboardData function available:', typeof window.loadDashboardData === 'function');
+      console.log('Analysis tabs setup complete. Use window.populateAnalysisTabs() to populate with custom data.');
     }
     init();
   </script>
