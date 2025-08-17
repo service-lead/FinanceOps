@@ -103,9 +103,42 @@
   .msg .bubble{padding:10px 12px; border-radius:14px; max-width:78%;}
   .msg.user{justify-content:flex-end}
   .msg.user .bubble{background:linear-gradient(135deg, var(--accent) 0%, var(--accent-2) 100%); color:#ffffff; border:0; align-self:flex-end}
-  .msg.bot .bubble{background:rgba(173,11,246,.15); border:1px solid var(--accent)}
-  .chat-input{display:flex; gap:8px}
-  .chat-input textarea{flex:1; min-height:60px; max-height:220px; resize:vertical; line-height:1.5;}
+     .msg.bot .bubble{background:rgba(173,11,246,.15); border:1px solid var(--accent)}
+   
+   /* Loading message styles */
+   .loading-bubble {
+     background: rgba(173,11,246,.1) !important;
+     border: 1px dashed var(--accent) !important;
+   }
+   
+   .loading-content {
+     display: flex;
+     align-items: center;
+     gap: 12px;
+   }
+   
+   .loading-spinner {
+     width: 20px;
+     height: 20px;
+     border: 2px solid rgba(173,11,246,.3);
+     border-top: 2px solid var(--accent);
+     border-radius: 50%;
+     animation: spin 1s linear infinite;
+   }
+   
+   .loading-text {
+     color: var(--accent);
+     font-style: italic;
+     font-size: 14px;
+   }
+   
+   @keyframes spin {
+     0% { transform: rotate(0deg); }
+     100% { transform: rotate(360deg); }
+   }
+   
+   .chat-input{display:flex; gap:8px}
+   .chat-input textarea{flex:1; min-height:60px; max-height:220px; resize:vertical; line-height:1.5;}
   .muted{color:var(--muted)}
   .pulse{animation:pulse 1.2s ease 0s 2}
   @keyframes pulse{
@@ -409,7 +442,7 @@
                 <div id="analysis-exec-summary" class="analysis-tab-content">
                   <div id="analysisText" class="analysis"></div>
                   <br>
-                  <small class="muted">To populate this tab with custom data from your n8n workflow, call: window.populateAnalysisTabs({executiveSummary: "Your custom executive summary text here"})</small>
+                 <!--- <small class="muted">To populate this tab with custom data from your n8n workflow, call: window.populateAnalysisTabs({executiveSummary: "Your custom executive summary text here"})</small>-->
                 </div>
                 
                 <div id="analysis-income-analysis" class="analysis-tab-content" style="display: none;">
@@ -1228,24 +1261,93 @@
     const chatInput = document.getElementById("chatInput");
     const sendBtn = document.getElementById("sendBtn");
 
-    function addMsg(text, who="bot"){
-      const systemMessages = [
-        "Workflow running",
-      ];
-      
-      if (systemMessages.some(msg => text.includes(msg))) {
-        return; 
-      }
-      
-      const row = document.createElement("div");
-      row.className = `msg ${who}`;
-      const bubble = document.createElement("div");
-      bubble.className = "bubble";
-      bubble.innerHTML = text;
-      row.appendChild(bubble);
-      chatLog.appendChild(row);
-      chatLog.scrollTop = chatLog.scrollHeight;
-    }
+         function addMsg(text, who="bot"){
+       const systemMessages = [
+         "Workflow running",
+       ];
+       
+       if (systemMessages.some(msg => text.includes(msg))) {
+         return; 
+       }
+       
+       const row = document.createElement("div");
+       row.className = `msg ${who}`;
+       const bubble = document.createElement("div");
+       bubble.className = "bubble";
+       bubble.innerHTML = text;
+       row.appendChild(bubble);
+       chatLog.appendChild(row);
+       chatLog.scrollTop = chatLog.scrollHeight;
+     }
+     
+     // Function to add loading message
+     function addLoadingMsg() {
+       const loadingId = 'loading-' + Date.now();
+       const row = document.createElement("div");
+       row.className = "msg bot loading-msg";
+       row.id = loadingId;
+       
+       const bubble = document.createElement("div");
+       bubble.className = "bubble loading-bubble";
+       bubble.innerHTML = `
+         <div class="loading-content">
+           <div class="loading-spinner"></div>
+           <div class="loading-text">🤖 AI is generating...</div>
+         </div>
+       `;
+       
+       row.appendChild(bubble);
+       chatLog.appendChild(row);
+       chatLog.scrollTop = chatLog.scrollHeight;
+       
+       return loadingId;
+     }
+     
+     // Function to remove loading message
+     function removeLoadingMsg(loadingId) {
+       const loadingMsg = document.getElementById(loadingId);
+       if (loadingMsg) {
+         loadingMsg.remove();
+       }
+     }
+     
+     // Function to format AI response for better readability
+     function formatAIResponse(text) {
+       if (!text || typeof text !== 'string') {
+         return text;
+       }
+       
+       let formatted = text;
+       
+       // Add line breaks for better structure
+       formatted = formatted.replace(/\n\n+/g, '\n\n');
+       
+       // Format bullet points and lists
+       formatted = formatted.replace(/^[-*•]\s*/gm, '• ');
+       
+       // Format numbered lists - only make the number bold, not the content
+       formatted = formatted.replace(/^(\d+\.)\s*/gm, '<strong>$1</strong> ');
+       
+       // Format headers (lines that end with colon) - only make headers bold
+       formatted = formatted.replace(/^([^:]+:)$/gm, '<strong>$1</strong>');
+       
+       // Format key-value pairs - only make the key bold, not the value
+       formatted = formatted.replace(/^([^:]+):\s*([^:]+)$/gm, '<strong>$1:</strong> $2');
+       
+       // Add emphasis to important numbers/percentages - use italics, not bold
+       formatted = formatted.replace(/(\d+(?:\.\d+)?%?)/g, '<em>$1</em>');
+       
+       // Format currency values - use italics, not bold
+       formatted = formatted.replace(/\$(\d+(?:,\d{3})*(?:\.\d{2})?)/g, '<em>$$$1</em>');
+       
+       // Add spacing around important sections
+       formatted = formatted.replace(/([.!?])\s*([A-Z])/g, '$1\n\n$2');
+       
+       // Convert line breaks to HTML
+       formatted = formatted.replace(/\n/g, '<br>');
+       
+       return formatted;
+     }
 
     function normalizeMonthToken(s){
       const token = s.toLowerCase();
@@ -1291,20 +1393,20 @@
         monthSelect.value = currentMonthKey;
         detailMonthSelect.value = currentMonthKey;
         updateExecutive(); updateDetail();
-        addMsg(`Month set to <b>${findMonth(currentMonthKey).label}</b>.`);
-        pulse(document.getElementById("kpis"));
-        return;
-      }
-      if(intents.breakdownProduct){
-        addMsg("Showing <b>Value by Account</b> for the selected month below.");
-        pulse(document.getElementById("barChart").parentElement.parentElement);
-        return;
-      }
+                 addMsg(formatAIResponse(`Month set to <b>${findMonth(currentMonthKey).label}</b>.`));
+         pulse(document.getElementById("kpis"));
+         return;
+       }
+       if(intents.breakdownProduct){
+         addMsg(formatAIResponse("Showing <b>Value by Account</b> for the selected month below."));
+         pulse(document.getElementById("barChart").parentElement.parentElement);
+         return;
+       }
 
       const monthKey = monthsNorm[0] || currentMonthKey;
       const idx = indexOfMonth(monthKey);
       const m = findMonth(monthKey);
-       if(!m){ addMsg("Load data first, then ask questions."); return; }
+       if(!m){ addMsg(formatAIResponse("Load data first, then ask questions.")); return; }
 
       if(intents.compare && monthsNorm.length >= 2){
         const a = findMonth(monthsNorm[0]); const b = findMonth(monthsNorm[1]);
@@ -1313,223 +1415,258 @@
           const pctTI = a.tradingIncome ? diffTI / a.tradingIncome : 0;
           const diffOI = b.otherIncome - a.otherIncome;
           const pctOI = a.otherIncome ? diffOI / a.otherIncome : 0;
-          addMsg(`<b>${b.label}</b> vs <b>${a.label}</b>: Trading Income ${currency(b.tradingIncome)} vs ${currency(a.tradingIncome)} (${diffTI>=0?"▲":"▼"} ${percent(pctTI)}), Other Income ${currency(b.otherIncome)} vs ${currency(a.otherIncome)} (${diffOI>=0?"▲":"▼"} ${percent(pctOI)}).`);
-          pulse(document.getElementById("trendChart").parentElement.parentElement);
-        } else {
-          addMsg("Please specify two valid months to compare.");
-        }
-        return;
-      }
+                   addMsg(formatAIResponse(`<b>${b.label}</b> vs <b>${a.label}</b>: Trading Income ${currency(b.tradingIncome)} vs ${currency(a.tradingIncome)} (${diffTI>=0?"▲":"▼"} ${percent(pctTI)}), Other Income ${currency(b.otherIncome)} vs ${currency(a.otherIncome)} (${diffOI>=0?"▲":"▼"} ${percent(pctOI)}).`));
+         pulse(document.getElementById("trendChart").parentElement.parentElement);
+       } else {
+         addMsg(formatAIResponse("Please specify two valid months to compare."));
+       }
+       return;
+     }
 
-      if(intents.askTradingIncome){
-        addMsg(`<b>${m.label}</b> Trading Income: <b>${currency(m.tradingIncome)}</b>.`);
-        pulse(document.getElementById("kpis"));
-        return;
-      }
-      if(intents.askOtherIncome){
-        addMsg(`<b>${m.label}</b> Other Income: <b>${currency(m.otherIncome)}</b>.`);
-        pulse(document.getElementById("kpis"));
-        return;
-      }
-      if(intents.askOperatingExpenses){
-        addMsg(`<b>${m.label}</b> Operating Expenses: <b>${currency(m.operatingExpenses)}</b>.`);
-        pulse(document.getElementById("kpis"));
-        return;
-      }
-      if(intents.askCostOfSales){
-        addMsg(`<b>${m.label}</b> Cost of Sales: <b>${currency(m.costOfSales)}</b>.`);
-        pulse(document.getElementById("kpis"));
-        return;
-      }
-      if(intents.askProfit){
-        addMsg(`<b>${m.label}</b> profit: <b>${currency(m.profit)}</b>.`);
-        pulse(document.getElementById("kpis"));
-        return;
-      }
-      if(intents.askMargin){
-        addMsg(`<b>${m.label}</b> margin: <b>${percent(m.margin)}</b>.`);
-        pulse(document.getElementById("kpis"));
-        return;
-      }
-      if(intents.askGrowth){
-        const gTI = computeMoMDelta(idx, "tradingIncome");
-        const gOI = computeMoMDelta(idx, "otherIncome");
-        if(!gTI.hasPrev && !gOI.hasPrev){ addMsg("No prior month to compare."); return; }
-        let msg = "Growth vs prior month: ";
-        if(gTI.hasPrev) msg += `Trading Income ${gTI.delta>=0?"▲":"▼"} <b>${percent(gTI.pct)}</b> (${gTI.delta>=0?"+":""}${currency(gTI.delta)}), `;
-        if(gOI.hasPrev) msg += `Other Income ${gOI.delta>=0?"▲":"▼"} <b>${percent(gOI.pct)}</b> (${gOI.delta>=0?"+":""}${currency(gOI.delta)}).`;
-        addMsg(msg);
-        pulse(document.getElementById("trendChart").parentElement.parentElement);
-        return;
-      }
-      if(intents.topAccount){
-        const rows = buildAccountRows(monthKey);
-        addMsg(`Top account in <b>${m.label}</b>: <b>${rows[0].account}</b> (${currency(rows[0].value)} in ${rows[0].section}).`);
-        pulse(document.getElementById("barChart").parentElement.parentElement);
-        return;
-      }
-      if(intents.topSection){
-        const mix = sectionMixForMonth(monthKey).sort((a,b)=>b.pct-a.pct)[0];
-        addMsg(`Top section in <b>${m.label}</b>: <b>${mix.key}</b> (${percent(mix.pct)} of activity).`);
-        pulse(document.getElementById("mixChart").parentElement.parentElement);
-        return;
-      }
+             if(intents.askTradingIncome){
+         addMsg(formatAIResponse(`<b>${m.label}</b> Trading Income: <b>${currency(m.tradingIncome)}</b>.`));
+         pulse(document.getElementById("kpis"));
+         return;
+       }
+       if(intents.askOtherIncome){
+         addMsg(formatAIResponse(`<b>${m.label}</b> Other Income: <b>${currency(m.otherIncome)}</b>.`));
+         pulse(document.getElementById("kpis"));
+         return;
+       }
+       if(intents.askOperatingExpenses){
+         addMsg(formatAIResponse(`<b>${m.label}</b> Operating Expenses: <b>${currency(m.operatingExpenses)}</b>.`));
+         pulse(document.getElementById("kpis"));
+         return;
+       }
+       if(intents.askCostOfSales){
+         addMsg(formatAIResponse(`<b>${m.label}</b> Cost of Sales: <b>${currency(m.costOfSales)}</b>.`));
+         return;
+       }
+       if(intents.askProfit){
+         addMsg(formatAIResponse(`<b>${m.label}</b> profit: <b>${currency(m.profit)}</b>.`));
+         pulse(document.getElementById("kpis"));
+         return;
+       }
+       if(intents.askMargin){
+         addMsg(formatAIResponse(`<b>${m.label}</b> margin: <b>${percent(m.margin)}</b>.`));
+         pulse(document.getElementById("kpis"));
+         return;
+       }
+             if(intents.askGrowth){
+         const gTI = computeMoMDelta(idx, "tradingIncome");
+         const gOI = computeMoMDelta(idx, "otherIncome");
+         if(!gTI.hasPrev && !gOI.hasPrev){ addMsg(formatAIResponse("No prior month to compare.")); return; }
+         let msg = "Growth vs prior month: ";
+         if(gTI.hasPrev) msg += `Trading Income ${gTI.delta>=0?"▲":"▼"} <b>${percent(gTI.pct)}</b> (${gTI.delta>=0?"+":""}${currency(gTI.delta)}), `;
+         if(gOI.hasPrev) msg += `Other Income ${gOI.delta>=0?"▲":"▼"} <b>${percent(gOI.pct)}</b> (${gOI.delta>=0?"+":""}${currency(gOI.delta)}).`;
+         addMsg(formatAIResponse(msg));
+         pulse(document.getElementById("trendChart").parentElement.parentElement);
+         return;
+       }
+             if(intents.topAccount){
+         const rows = buildAccountRows(monthKey);
+         addMsg(formatAIResponse(`Top account in <b>${m.label}</b>: <b>${rows[0].account}</b> (${currency(rows[0].value)} in ${rows[0].section}).`));
+         pulse(document.getElementById("barChart").parentElement.parentElement);
+         return;
+       }
+       if(intents.topSection){
+         const mix = sectionMixForMonth(monthKey).sort((a,b)=>b.pct-a.pct)[0];
+         addMsg(formatAIResponse(`Top section in <b>${m.label}</b>: <b>${mix.key}</b> (${percent(mix.pct)} of activity).`));
+         pulse(document.getElementById("mixChart").parentElement.parentElement);
+         return;
+       }
 
-      addMsg("I can help with totals, profit, margin, month changes, comparisons, top product/category, and navigation to views.");
+             addMsg(formatAIResponse("I can help with totals, profit, margin, month changes, comparisons, top product/category, and navigation to views."));
     }
 
-    document.querySelectorAll(".chip.q").forEach(chip=>{
-      chip.addEventListener("click", async ()=>{
-        const question = chip.textContent;
-        
-        addMsg(question, "user");
-        
-        try {
-          const response = await fetch('https://opsteamai.app.n8n.cloud/webhook-test/8e785180-6a96-41eb-95dd-606aaf85b75b', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              message: question,
-              timestamp: new Date().toISOString(),
-              userInput: question,
-              type: 'predefined_question'
-            })
-          });
-          
-          if (response.ok) {
-            try {
-              const aiResponse = await response.json();
-              
-              console.log('Raw AI response from n8n:', aiResponse);
-              console.log('Response type:', typeof aiResponse);
-              console.log('Response keys:', Object.keys(aiResponse || {}));
-              
-              const parsedResponse = parseAIResponse(aiResponse);
-              addMsg(parsedResponse, "bot");
-            } catch (parseError) {
-              console.error('Error parsing AI response:', parseError);
-              try {
-                const textResponse = await response.text();
-                console.log('Raw text response from n8n:', textResponse);
-                addMsg(textResponse || "AI response received but could not be parsed.", "bot");
-              } catch (textError) {
-                addMsg("AI response received but could not be parsed.", "bot");
-              }
-            }
-          } else {
-            console.error('Webhook response error:', {
-              status: response.status,
-              statusText: response.statusText,
-              url: response.url
-            });
-            
-            if (response.status === 404) {
-              addMsg("Error 404: Webhook endpoint not found. Please check the webhook URL.", "bot");
-            } else if (response.status === 500) {
-              addMsg("Error 500: Server error in the workflow. Please try again later.", "bot");
-            } else if (response.status === 403) {
-              addMsg("Error 403: Access denied to the workflow. Please check permissions.", "bot");
-            } else {
-              addMsg(`Error ${response.status}: ${response.statusText}. Please try again.`, "bot");
-            }
-          }
-        } catch (error) {
-          console.error('Error sending to webhook:', error);
-          addMsg("Error connecting to workflow. Please try again.", "bot");
-        }
-        
-      });
-    });
-    sendBtn.addEventListener("click", async ()=>{
-      const q = chatInput.value.trim();
-      if(!q) return;
-      
-      const originalText = sendBtn.textContent;
-      sendBtn.textContent = "Sending...";
-      sendBtn.disabled = true;
-      
-      addMsg(q, "user");
-      
-              try {
-          const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Request timeout after 30 seconds')), 160000);
-          });
-          
-          const fetchPromise = fetch('https://opsteamai.app.n8n.cloud/webhook-test/8e785180-6a96-41eb-95dd-606aaf85b75b', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              message: q,
-              timestamp: new Date().toISOString(),
-              userInput: q
-            })
-          });
-          
-          const response = await Promise.race([fetchPromise, timeoutPromise]);
-        
-        if (response.ok) {
-                      try {
-              const aiResponse = await response.json();
-              
-              console.log('Raw AI response from n8n:', aiResponse);
-              console.log('Response type:', typeof aiResponse);
-              console.log('Response keys:', Object.keys(aiResponse || {}));
-              
-              const parsedResponse = parseAIResponse(aiResponse);
-              addMsg(parsedResponse, "bot");
-            } catch (parseError) {
-              console.error('Error parsing AI response:', parseError);
-              try {
-                const textResponse = await response.text();
-                console.log('Raw text response from n8n:', textResponse);
-                addMsg(textResponse || "AI response received but could not be parsed.", "bot");
-              } catch (textError) {
-                addMsg("AI response received but could not be parsed.", "bot");
-              }
-            }
-        } else {
-          console.error('Webhook response error:', {
-            status: response.status,
-            statusText: response.statusText,
-            url: response.url
-          });
-          
-          if (response.status === 404) {
-            addMsg("Error 404: Webhook endpoint not found. Please check the webhook URL.", "bot");
-          } else if (response.status === 500) {
-            addMsg("Error 500: Server error in the workflow. Please try again later.", "bot");
-          } else if (response.status === 403) {
-            addMsg("Error 403: Access denied to the workflow. Please check permissions.", "bot");
-          } else {
-            addMsg(`Error ${response.status}: ${response.statusText}. Please try again.`, "bot");
-          }
-        }
-              } catch (error) {
-          console.error('Error sending to webhook:', error);
-          console.error('Error details:', {
-            name: error.name,
-            message: error.message,
-            stack: error.stack
-          });
-          
-          if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            addMsg("Network error: Unable to connect to the workflow. Please check your internet connection.", "bot");
-          } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-            addMsg("Connection failed: The workflow server may be down or unreachable.", "bot");
-          } else {
-            addMsg(`Error: ${error.message || 'Unknown error occurred'}. Please try again.`, "bot");
-          }
-        } finally {
-          sendBtn.textContent = originalText;
-          sendBtn.disabled = false;
-        }
-        
-        chatInput.value = "";
-    });
+         document.querySelectorAll(".chip.q").forEach(chip=>{
+       chip.addEventListener("click", async ()=>{
+         const question = chip.textContent;
+         
+         addMsg(question, "user");
+         
+         // Add loading message
+         const loadingMsgId = addLoadingMsg();
+         
+         try {
+           // Increased timeout to 10 minutes (600 seconds)
+           const timeoutPromise = new Promise((_, reject) => {
+             setTimeout(() => reject(new Error('Request timeout after 10 minutes')), 600000);
+           });
+           
+           const fetchPromise = fetch('https://opsteamai.app.n8n.cloud/webhook-test/8e785180-6a96-41eb-95dd-606aaf85b75b', {
+             method: 'POST',
+             headers: {
+               'Content-Type': 'application/json',
+             },
+             body: JSON.stringify({
+               message: question,
+               timestamp: new Date().toISOString(),
+               userInput: question,
+               type: 'predefined_question'
+             })
+           });
+           
+           const response = await Promise.race([fetchPromise, timeoutPromise]);
+           
+           if (response.ok) {
+             try {
+               const aiResponse = await response.json();
+               
+               console.log('Raw AI response from n8n:', aiResponse);
+               console.log('Response type:', typeof aiResponse);
+               console.log('Response keys:', Object.keys(aiResponse || {}));
+               
+               const parsedResponse = parseAIResponse(aiResponse);
+               removeLoadingMsg(loadingMsgId);
+               addMsg(formatAIResponse(parsedResponse), "bot");
+             } catch (parseError) {
+               console.error('Error parsing AI response:', parseError);
+               try {
+                 const textResponse = await response.text();
+                 console.log('Raw text response from n8n:', textResponse);
+                 removeLoadingMsg(loadingMsgId);
+                 addMsg(formatAIResponse(textResponse || "AI response received but could not be parsed."), "bot");
+               } catch (textError) {
+                 removeLoadingMsg(loadingMsgId);
+                 addMsg(formatAIResponse("AI response received but could not be parsed."), "bot");
+               }
+             }
+           } else {
+             console.error('Webhook response error:', {
+               status: response.status,
+               statusText: response.statusText,
+               url: response.url
+             });
+             
+             removeLoadingMsg(loadingMsgId);
+             
+             if (response.status === 404) {
+               addMsg("❌ <strong>Error 404:</strong> Webhook endpoint not found. Please check the webhook URL.", "bot");
+             } else if (response.status === 500) {
+               addMsg("❌ <strong>Error 500:</strong> Server error in the workflow. Please try again later.", "bot");
+             } else if (response.status === 403) {
+               addMsg("❌ <strong>Error 403:</strong> Access denied to the workflow. Please check permissions.", "bot");
+             } else {
+               addMsg(`❌ <strong>Error ${response.status}:</strong> ${response.statusText}. Please try again.`, "bot");
+             }
+           }
+         } catch (error) {
+           console.error('Error sending to webhook:', error);
+           removeLoadingMsg(loadingMsgId);
+           
+           if (error.message.includes('timeout')) {
+             addMsg("⏰ <strong>Request Timeout:</strong> The response took too long. Please try again or check if the workflow is processing.", "bot");
+           } else {
+             addMsg("❌ <strong>Error:</strong> Error connecting to workflow. Please try again.", "bot");
+           }
+         }
+         
+       });
+     });
+         sendBtn.addEventListener("click", async ()=>{
+       const q = chatInput.value.trim();
+       if(!q) return;
+       
+       // Clear input immediately
+       chatInput.value = "";
+       
+       const originalText = sendBtn.textContent;
+       sendBtn.textContent = "Sending...";
+       sendBtn.disabled = true;
+       
+       addMsg(q, "user");
+       
+       // Add loading message
+       const loadingMsgId = addLoadingMsg();
+       
+       try {
+         // Increased timeout to 10 minutes (600 seconds)
+         const timeoutPromise = new Promise((_, reject) => {
+           setTimeout(() => reject(new Error('Request timeout after 10 minutes')), 600000);
+         });
+         
+         const fetchPromise = fetch('https://opsteamai.app.n8n.cloud/webhook-test/8e785180-6a96-41eb-95dd-606aaf85b75b', {
+           method: 'POST',
+           headers: {
+             'Content-Type': 'application/json',
+           },
+           body: JSON.stringify({
+             message: q,
+             timestamp: new Date().toISOString(),
+             userInput: q
+           })
+         });
+         
+         const response = await Promise.race([fetchPromise, timeoutPromise]);
+       
+         if (response.ok) {
+           try {
+             const aiResponse = await response.json();
+             
+             console.log('Raw AI response from n8n:', aiResponse);
+             console.log('Response type:', typeof aiResponse);
+             console.log('Response keys:', Object.keys(aiResponse || {}));
+             
+             const parsedResponse = parseAIResponse(aiResponse);
+             // Remove loading message and add formatted response
+             removeLoadingMsg(loadingMsgId);
+             addMsg(formatAIResponse(parsedResponse), "bot");
+           } catch (parseError) {
+             console.error('Error parsing AI response:', parseError);
+             try {
+               const textResponse = await response.text();
+               console.log('Raw text response from n8n:', textResponse);
+               removeLoadingMsg(loadingMsgId);
+               addMsg(formatAIResponse(textResponse || "AI response received but could not be parsed."), "bot");
+             } catch (textError) {
+               removeLoadingMsg(loadingMsgId);
+               addMsg(formatAIResponse("AI response received but could not be parsed."), "bot");
+             }
+           }
+         } else {
+           console.error('Webhook response error:', {
+             status: response.status,
+             statusText: response.statusText,
+             url: response.url
+           });
+           
+           removeLoadingMsg(loadingMsgId);
+           
+           if (response.status === 404) {
+             addMsg("❌ <strong>Error 404:</strong> Webhook endpoint not found. Please check the webhook URL.", "bot");
+           } else if (response.status === 500) {
+             addMsg("❌ <strong>Error 500:</strong> Server error in the workflow. Please try again later.", "bot");
+           } else if (response.status === 403) {
+             addMsg("❌ <strong>Error 403:</strong> Access denied to the workflow. Please check permissions.", "bot");
+           } else {
+             addMsg(`❌ <strong>Error ${response.status}:</strong> ${response.statusText}. Please try again.`, "bot");
+           }
+         }
+       } catch (error) {
+         console.error('Error sending to webhook:', error);
+         console.error('Error details:', {
+           name: error.name,
+           message: error.message,
+           stack: error.stack
+         });
+         
+         removeLoadingMsg(loadingMsgId);
+         
+         if (error.name === 'TypeError' && error.message.includes('fetch')) {
+           addMsg("❌ <strong>Network Error:</strong> Unable to connect to the workflow. Please check your internet connection.", "bot");
+         } else if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+           addMsg("❌ <strong>Connection Failed:</strong> The workflow server may be down or unreachable.", "bot");
+         } else if (error.message.includes('timeout')) {
+           addMsg("⏰ <strong>Request Timeout:</strong> The response took too long. Please try again or check if the workflow is processing.", "bot");
+         } else {
+           addMsg(`❌ <strong>Error:</strong> ${error.message || 'Unknown error occurred'}. Please try again.`, "bot");
+         }
+       } finally {
+         sendBtn.textContent = originalText;
+         sendBtn.disabled = false;
+       }
+     });
     chatInput.addEventListener("keydown", (e)=>{
       if(e.key==="Enter" && !e.shiftKey){
         e.preventDefault();
