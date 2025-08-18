@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpsTeam App Store</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        body {
+            background-color: #000000;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        
+        .dashboard-body {
+            background-color: #000000;
+            color: #ffffff;
+        }
+        
+        /* Header styling */
+        .header {
+            background-color: #000000;
+            border-bottom: 1px solid #333333;
+        }
+        
+        /* App card styling */
+        .app-card {
+            background-color: #AD0BF6 !important;
+            border: 1px solid rgba(173, 11, 246, 0.3);
+            min-height: 360px;
+        }
+        
+        /* Fix app icon and logo visibility */
+        .app-icon {
+            width: 100%;
+            height: auto;
+            min-height: 200px;
+            margin: 0 auto 20px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: visible;
+        }
+        
+        .app-logo {
+            width: 100%;
+            height: auto;
+            max-height: 200px;
+            object-fit: contain;
+            border-radius: 16px;
+        }
+        
+        /* Fixed Footer */
+        .footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            color: black;
+            text-align: center;
+            padding: 16px;
+            font-weight: 600;
+            z-index: 1000;
+        }
+        
+        /* Adjust main content for fixed footer */
+        .main-content {
+            padding-bottom: 80px;
+        }
+        
+        /* Website link styling */
+        .website-link {
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s ease;
+        }
+        
+        .website-link:hover {
+            transform: scale(1.1);
+        }
+        
+        .website-icon {
+            font-size: 1.33rem;
+            cursor: pointer;
+            padding: 6px 10px;
+            border-radius: 50%;
+            background: rgba(173, 11, 246, 0.1);
+            border: 1px solid rgba(173, 11, 246, 0.3);
+            transition: all 0.3s ease;
+        }
+        
+        .website-icon:hover {
+            background: rgba(173, 11, 246, 0.2);
+            border-color: rgba(173, 11, 246, 0.5);
+        }
+    </style>
+</head>
+<body class="dashboard-body">
+    <!-- Header -->
+    <header class="header">
+        <div class="header-left">
+            <div class="logo">
+                <img src="0. Logo.png" alt="OpsTeam Logo" class="logo-image">
+              <!--  <span class="company-name">Sensiba Workspace</span> -->
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="app-launcher">
+                <a href="https://opsteam.com.au" target="_blank" class="website-link">
+                    <div class="website-icon">🌐</div>
+                </a>
+            </div>
+            <div class="user-profile">
+                <div class="profile-icon">S</div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        
+
+        <div class="apps-grid">
+            <!-- FinanceOps+ App -->
+            <div class="app-card clickable" onclick="openFinanceOps()" style="background-image: url('5 finops.png'); background-size: cover; background-position: center; background-repeat: no-repeat; position: relative;">
+                <div class="app-header">
+                    <div class="favorite-icon">★</div>
+                    <div class="menu-icon">⋮</div>
+                </div>
+                <div class="app-icon" style="display: none;">
+                    <img src="5 finops.png" alt="FinanceOps+" class="app-logo">
+                </div>
+                <h3 class="app-title" style="display: none;">FinanceOps+</h3>
+                <p class="app-subtitle" style="display: none;">Finance</p>
+            </div>
+
+            <!-- HealthOps AI App -->
+            <div class="app-card non-clickable" style="background-image: url('6 healthops.png'); background-size: cover; background-position: center; background-repeat: no-repeat; position: relative;">
+                <div class="app-header">
+                    <div class="favorite-icon">★</div>
+                    <div class="menu-icon">⋮</div>
+                </div>
+                <div class="app-icon" style="display: none;">
+                    <img src="6 healthops.png" alt="HealthOps AI" class="app-logo">
+                </div>
+                <h3 class="app-title" style="display: none;">HealthOps AI</h3>
+                <p class="app-subtitle" style="display: none;">Healthcare</p>
+            </div>
+
+            <!-- SalesOps AI App -->
+            <div class="app-card non-clickable" style="background-image: url('7 salesops.png'); background-size: cover; background-position: center; background-repeat: no-repeat; position: relative;">
+                <div class="app-header">
+                    <div class="favorite-icon">★</div>
+                    <div class="menu-icon">⋮</div>
+                </div>
+                <div class="app-icon" style="display: none;">
+                    <img src="7 salesops.png" alt="SalesOps AI" class="app-logo">
+                </div>
+                <h3 class="app-title" style="display: none;">SalesOps AI</h3>
+                <p class="app-subtitle" style="display: none;">Sales</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <span>Powered by OpsTeam</span>
+    </footer>
+
+    <!-- FinanceOps Modal -->
+    <div id="financeModal" class="modal">
+        <div class="modal-content fullscreen">
+            <div class="modal-header">
+                <h2>FinanceOps+</h2>
+                <span class="close" onclick="closeFinanceOps()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <iframe id="financeFrame" src="finopsapp.html" frameborder="0"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
