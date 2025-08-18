@@ -79,7 +79,27 @@
   .controls{
     display:flex; gap:8px; flex-wrap:wrap; align-items:center;
   }
-  select, input[type="text"], textarea, button.icon, button.primary{ background:rgba(173,11,246,.08); border:1px solid rgba(173,11,246,.3); color:var(--text); padding:10px 12px; border-radius:10px; outline:none; }
+     select, input[type="text"], textarea, button.icon, button.primary{ background:rgba(173,11,246,.08); border:1px solid rgba(173,11,246,.3); color:var(--text); padding:10px 12px; border-radius:10px; outline:none; }
+   
+
+   
+       #detailMonthSelect option {
+      color: #AD0BF6 !important;
+      background: white;
+    }
+    
+ 
+    
+    #sectionSelect option {
+      color: #AD0BF6 !important;
+      background: white;
+    }
+
+    
+    #monthSelect option {
+      color: #AD0BF6 !important;
+      background: white;
+    }
   select, input[type="text"]{min-width:160px}
   button.icon{cursor:pointer}
   button.primary, a.primary{background: #AD0BF6; color:#ffffff; font-weight:800; border:0; text-decoration:none; padding:10px 14px; border-radius:10px; display:inline-flex; align-items:center; gap:8px}
@@ -378,8 +398,8 @@
         <div class="panel-body" style="padding: 12px 16px;">
           <div class="controls" style="gap: 0;">
             <button class="tab-btn active" data-tab="exec" onclick="switchTab('exec')">Executive Summary</button>
-            <button class="tab-btn" data-tab="chat" onclick="switchTab('chat')">AI Chatbot</button>
             <button class="tab-btn" data-tab="detail" onclick="switchTab('detail')">Detail View</button>
+            <button class="tab-btn" data-tab="chat" onclick="switchTab('chat')">Ask Ollie</button>
           </div>
         </div>
       </div>
@@ -459,10 +479,13 @@
 
       <section id="tab-chat" class="tab" aria-labelledby="AI Chatbot" style="display:none">
         <div class="panel">
-          <div class="panel-header">
-            <strong>AI Chatbot</strong>
-            <span class="muted">Ask questions about your financial data</span>
-          </div>
+                     <div class="panel-header">
+             <div style="display: flex; align-items: center; gap: 8px;">
+               <img src="Flux_Dev_A_hyperclean_photorealistic_rounded_3Dstyle_character_1.jpg" alt="AI Assistant Icon" style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover;">
+               <strong style="color: var(--text); font-size: 18px;">Ask Ollie</strong>
+             </div>
+             <span class="muted">Ask questions about your financial data</span>
+           </div>
           <div class="panel-body">
             <div class="panel" style="margin-bottom:12px">
               <div class="panel-header">
@@ -1017,7 +1040,7 @@
 
     function renderAnalysis(){
       if(!currentMonthKey || !monthSeries.length) { 
-        document.getElementById("analysisText").textContent = "No data available for analysis."; 
+        document.getElementById("analysisText").innerHTML = "No data available for analysis."; 
         return; 
       }
       const idx = indexOfMonth(currentMonthKey);
@@ -1033,13 +1056,21 @@
       const totalExpenses = m.operatingExpenses + m.costOfSales;
 
       const text = `
-        ${m.label} performance: Trading Income ${currency(m.tradingIncome)} ${prev ? `(${growthTI>=0?"▲":"▼"} ${percent(growthTI)})` : ""}, Other Income ${currency(m.otherIncome)} ${prev ? `(${growthOI>=0?"▲":"▼"} ${percent(growthOI)})` : ""}. 
-        Operating Expenses ${currency(m.operatingExpenses)} ${prev ? `(${growthOE>=0?"▲":"▼"} ${percent(growthOE)})` : ""}, Cost of Sales ${currency(m.costOfSales)} ${prev ? `(${growthCS>=0?"▲":"▼"} ${percent(growthCS)})` : ""}.
-        Net profit ${currency(m.profit)} with ${percent(m.margin)} margin. 
-        Top account: ${topAccount ? topAccount.account : "N/A"} (${topAccount ? currency(topAccount.value) : "N/A"}).
-        Focus: Optimize cost structure while maintaining income growth momentum.
+        <strong>Executive Summary for ${m.label}</strong><br><br>
+        <strong>Financial Performance:</strong><br>
+        <strong>Trading Income:</strong> ${currency(m.tradingIncome)} ${prev ? `(${growthTI>=0?"▲":"▼"} ${percent(growthTI)})` : ""}<br>
+        <strong>Other Income:</strong> ${currency(m.otherIncome)} ${prev ? `(${growthTI>=0?"▲":"▼"} ${percent(growthOI)})` : ""}<br>
+        <strong>Operating Expenses:</strong> ${currency(m.operatingExpenses)} ${prev ? `(${growthOE>=0?"▲":"▼"} ${percent(growthOE)})` : ""}<br>
+        <strong>Cost of Sales:</strong> ${currency(m.costOfSales)} ${prev ? `(${growthCS>=0?"▲":"▼"} ${percent(growthCS)})` : ""}<br><br>
+        <strong>Key Metrics:</strong><br>
+        <strong>Net Profit:</strong> ${currency(m.profit)}<br>
+        <strong>Profit Margin:</strong> ${percent(m.margin)}<br>
+        <strong>Total Income:</strong> ${currency(totalIncome)}<br>
+        <strong>Total Expenses:</strong> ${currency(totalExpenses)}<br><br>
+        <strong>Top Performing Account:</strong> ${topAccount ? topAccount.account : "N/A"} (${topAccount ? currency(topAccount.value) : "N/A"})<br><br>
+        <strong>Strategic Focus:</strong> Optimize cost structure while maintaining income growth momentum.
       `.replace(/\s+/g,' ').trim();
-      document.getElementById("analysisText").textContent = text;
+      document.getElementById("analysisText").innerHTML = text;
     }
     
     function renderIncomeAnalysis(){
@@ -1177,8 +1208,10 @@
           <td>${currency(r.value)}</td>
         </tr>
       `).join("");
+      const monthData = findMonth(detailMonthSelect.value);
+      const monthLabel = monthData ? monthData.label : 'Unknown Month';
       document.getElementById("tableSubtitle").textContent =
-        `${findMonth(detailMonthSelect.value).label} • ${rows.length} accounts`;
+        `${monthLabel} • ${rows.length} accounts`;
     }
 
     function renderBarChart(){
@@ -1210,7 +1243,9 @@
           plugins:{ legend:{ labels:{ color:"#ffffff" } } }
         }
       });
-      document.getElementById("barSubtitle").textContent = findMonth(detailMonthSelect.value).label;
+      const monthData = findMonth(detailMonthSelect.value);
+      const monthLabel = monthData ? monthData.label : 'Unknown Month';
+      document.getElementById("barSubtitle").textContent = monthLabel;
     }
 
     function updateDetail(){
@@ -1751,26 +1786,30 @@
         button.disabled = false;
       }
     });
-    document.getElementById('csvInput').addEventListener('change', async (e)=>{
-      const file = e.target.files?.[0]; if(!file) return;
-      const text = await file.text();
-      try{
-        const imported = parseCSV(text);
-        if(imported.length === 0){ 
-          return; 
+    // Only add csvInput listener if the element exists
+    const csvInput = document.getElementById('csvInput');
+    if (csvInput) {
+      csvInput.addEventListener('change', async (e)=>{
+        const file = e.target.files?.[0]; if(!file) return;
+        const text = await file.text();
+        try{
+          const imported = parseCSV(text);
+          if(imported.length === 0){ 
+            return; 
+          }
+          rows = imported;
+          monthSeries = computeMonthSeries(rows);
+          currentMonthKey = monthSeries.length ? monthSeries[monthSeries.length-1].key : null;
+          updateExecutive();
+          populateSectionSelect();
+          updateDetail();
+        } catch(err){
+          console.error(err);
+        } finally {
+          e.target.value = '';
         }
-        rows = imported;
-        monthSeries = computeMonthSeries(rows);
-        currentMonthKey = monthSeries.length ? monthSeries[monthSeries.length-1].key : null;
-        updateExecutive();
-        populateSectionSelect();
-        updateDetail();
-      } catch(err){
-        console.error(err);
-      } finally {
-        e.target.value = '';
-      }
-    });
+      });
+    }
 
     window.loadDashboardData = function(rowsArray, analysisData){
       console.log('loadDashboardData function called with:', rowsArray, 'and analysis data:', analysisData);
@@ -2186,6 +2225,21 @@
       if (targetSection) {
         targetSection.style.display = 'block';
         console.log('Tab switched to:', targetTab);
+        
+        // Add welcome message when chat tab is switched to
+        if (targetTab === 'chat') {
+          setTimeout(() => {
+            const chatLog = document.getElementById("chatLog");
+            if (chatLog && chatLog.children.length === 0) {
+              const welcomeMessage = "Hello, my name is Ollie — it's a pleasure to e-meet you!<br><br>I'm your Financial AI Assistant, here to provide quick insights, detailed analysis, and scenario modelling on your financial data. Excited to get started — how would you like to begin?";
+              const welcomeDiv = document.createElement("div");
+              welcomeDiv.style.cssText = "color: var(--text); line-height: 1.6; margin-bottom: 16px; padding: 16px; background: rgba(173,11,246,.05); border-radius: 8px;";
+              welcomeDiv.innerHTML = welcomeMessage;
+              chatLog.appendChild(welcomeDiv);
+              console.log("Welcome message added to chat tab");
+            }
+          }, 100);
+        }
       } else {
         console.error('Target section not found for tab:', targetTab);
       }
@@ -2222,19 +2276,20 @@
     
     function setupTabs() {
       console.log('Setting up tab switching...');
-      const tabButtons = document.querySelectorAll('.tab-btn');
+      // Only select main tab buttons (not analysis tab buttons)
+      const tabButtons = document.querySelectorAll('.tab-btn[data-tab]:not([data-analysis-tab])');
       const tabSections = document.querySelectorAll('.tab');
       
-      console.log('Found tab buttons:', tabButtons.length);
+      console.log('Found main tab buttons:', tabButtons.length);
       console.log('Found tab sections:', tabSections.length);
       
       tabButtons.forEach(button => {
         button.addEventListener('click', function(e) {
           e.preventDefault();
           const targetTab = this.getAttribute('data-tab');
-          console.log('Tab clicked:', targetTab);
+          console.log('Main tab clicked:', targetTab);
           
-          // Update button states
+          // Update main tab button states
           tabButtons.forEach(btn => btn.classList.remove('active'));
           this.classList.add('active');
           
@@ -2247,7 +2302,7 @@
           console.log('Target section:', targetSection);
           if (targetSection) {
             targetSection.style.display = 'block';
-            console.log('Tab switched to:', targetTab);
+            console.log('Main tab switched to:', targetTab);
           } else {
             console.error('Target section not found for tab:', targetTab);
           }
@@ -2262,12 +2317,69 @@
       setupTabs();
     }
     
+    // Listen for messages from parent window (dashboard.html)
+    window.addEventListener('message', function(event) {
+      if (event.data && event.data.type === 'loadDashboardData') {
+        console.log('Received data from parent window:', event.data.data);
+        
+        // Process the received data
+        const incomingRows = event.data.data.map(r => ({
+          financialYear: r['Financial Year'] ?? r.financialYear,
+          quarter: r['Quarter'] ?? r.quarter,
+          calendarYear: Number(r['Calendar Year'] ?? r.calendarYear),
+          month: r['Month'] ?? r.month,
+          monthNum: Number(r['Month Number'] ?? r.monthNum ?? r['Month Num']),
+          value: Number(String(r['Value'] ?? r.value).replace(/[$,\s]/g,''))||0,
+          section: r['Section'] ?? r.section,
+          account: r['Account'] ?? r.account,
+        })).filter(r => r.calendarYear && r.monthNum);
+        
+        // Load the data into the dashboard
+        rows = incomingRows;
+        monthSeries = computeMonthSeries(rows);
+        currentMonthKey = monthSeries.length ? monthSeries[monthSeries.length-1].key : null;
+        updateExecutive();
+        populateSectionSelect();
+        updateDetail();
+        
+        console.log('Dashboard data loaded successfully:', incomingRows.length, 'rows');
+      }
+    });
+    
     function init(){
       monthSeries = computeMonthSeries(rows);
       currentMonthKey = monthSeries.length ? monthSeries[monthSeries.length - 1].key : null;
       updateExecutive();
       populateSectionSelect();
       updateDetail();
+      
+      // Add default welcome message from Ollie
+      const welcomeMessage = "Hello, my name is Ollie — it's a pleasure to e-meet you!<br><br>I'm your Financial AI Assistant, here to provide quick insights, detailed analysis, and scenario modelling on your financial data. Excited to get started — how would you like to begin?";
+      
+      // Add the welcome message as plain text in the chat area
+      function addWelcomeMessage() {
+        const chatLog = document.getElementById("chatLog");
+        console.log("Chat log element:", chatLog);
+        if (chatLog) {
+          // Clear any existing content first
+          chatLog.innerHTML = '';
+          
+          // Create a simple div for the welcome message without bot styling
+          const welcomeDiv = document.createElement("div");
+          welcomeDiv.style.cssText = "color: var(--text); line-height: 1.6; margin-bottom: 16px; padding: 16px; background: rgba(173,11,246,.05); border-radius: 8px;";
+          welcomeDiv.innerHTML = welcomeMessage;
+          chatLog.appendChild(welcomeDiv);
+          console.log("Welcome message added successfully");
+        } else {
+          console.log("Chat log element not found");
+        }
+      }
+      
+      // Try to add the message immediately and also after a delay
+      addWelcomeMessage();
+      setTimeout(addWelcomeMessage, 500);
+      setTimeout(addWelcomeMessage, 1000);
+      
       console.log('Init complete. loadDashboardData function available:', typeof window.loadDashboardData === 'function');
       console.log('Analysis tabs setup complete. Use window.populateAnalysisTabs() to populate with custom data.');
     }

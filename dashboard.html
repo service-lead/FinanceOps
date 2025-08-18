@@ -59,8 +59,8 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: white;
-            color: black;
+            background: #AD0BF6;
+            color: white;
             text-align: center;
             padding: 16px;
             font-weight: 600;
@@ -113,6 +113,12 @@
         .modal-body {
             padding-bottom: 40px;
         }
+        
+        /* Loading spinner animation */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="dashboard-body">
@@ -120,14 +126,16 @@
     <header class="header">
         <div class="header-left">
             <div class="logo">
-                <img src="0. Logo.png" alt="OpsTeam Logo" class="logo-image">
+                <a href="https://opsteam.com.au" target="_blank">
+                    <img src="0. Logo.png" alt="OpsTeam Logo" class="logo-image">
+                </a>
               <!--  <span class="company-name">Sensiba Workspace</span> -->
             </div>
         </div>
         <div class="header-right">
             <div class="app-launcher">
                 <div class="grid-icon">
-                    <div class="gear-icon">⚙</div>
+                    <a href="https://opsteam.com.au" target="_blank" class="website-icon">🌐</a>
                 </div>
             </div>
             <div class="user-profile">
@@ -184,7 +192,7 @@
 
     <!-- Footer -->
     <footer class="footer">
-        <span>Powered by OpsTeam</span>
+        <span>OpsTeam Automation Ecosystem</span>
     </footer>
 
     <!-- FinanceOps Modal -->

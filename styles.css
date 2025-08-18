@@ -139,9 +139,19 @@ body {
 }
 
 .logo-image {
-    width: 120px;
+    width: 250px;
     height: 120px;
     object-fit: contain;
+    transition: opacity 0.3s ease;
+}
+
+.logo a {
+    text-decoration: none;
+    display: inline-block;
+}
+
+.logo a:hover .logo-image {
+    opacity: 0.8;
 }
 
 .company-name {
@@ -169,11 +179,18 @@ body {
     align-items: center;
     justify-content: center;
     position: relative;
+    display: none;
 }
 
-.gear-icon {
+.website-icon {
     font-size: 1.2rem;
     color: #6b7280;
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.website-icon:hover {
+    color: #8b5cf6;
 }
 
 .user-profile {
@@ -183,7 +200,7 @@ body {
 .profile-icon {
     width: 40px;
     height: 40px;
-    background: #8b5cf6;
+    background: #AD0BF6;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -294,8 +311,7 @@ body {
     padding: 20px 40px 0 40px;
     text-align: left;
     color: #6b7280;
-    font-size: 1rem;
-    border-top: 1px solid #e5e7eb;
+    font-size: 1.5rem;
     margin-top: auto;
 }
 
