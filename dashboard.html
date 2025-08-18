@@ -72,33 +72,46 @@
             padding-bottom: 80px;
         }
         
-        /* Website link styling */
-        .website-link {
-            text-decoration: none;
-            color: inherit;
+        /* Modal Footer Styles */
+        .modal-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #AD0BF6;
+            border-top: 1px solid var(--border);
+            padding: 16px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            transition: transform 0.2s ease;
+            justify-content: space-between;
+            gap: 16px;
+            z-index: 1000;
         }
         
-        .website-link:hover {
-            transform: scale(1.1);
+        .modal-footer h2 {
+            margin: 0;
+            color: var(--text);
+            font-size: 20px;
         }
         
-        .website-icon {
-            font-size: 1.33rem;
+        .modal-footer .close {
+            color: var(--text);
+            font-size: 28px;
+            font-weight: bold;
             cursor: pointer;
-            padding: 6px 10px;
-            border-radius: 50%;
-            background: rgba(173, 11, 246, 0.1);
-            border: 1px solid rgba(173, 11, 246, 0.3);
-            transition: all 0.3s ease;
+            background: none;
+            border: none;
+            padding: 0;
+            line-height: 1;
         }
         
-        .website-icon:hover {
-            background: rgba(173, 11, 246, 0.2);
-            border-color: rgba(173, 11, 246, 0.5);
+        .modal-footer .close:hover {
+            color: var(--accent);
+        }
+        
+        /* Adjust modal body for fixed footer */
+        .modal-body {
+            padding-bottom: 40px;
         }
     </style>
 </head>
@@ -113,9 +126,9 @@
         </div>
         <div class="header-right">
             <div class="app-launcher">
-                <a href="https://opsteam.com.au" target="_blank" class="website-link">
-                    <div class="website-icon">🌐</div>
-                </a>
+                <div class="grid-icon">
+                    <div class="gear-icon">⚙</div>
+                </div>
             </div>
             <div class="user-profile">
                 <div class="profile-icon">S</div>
@@ -177,12 +190,12 @@
     <!-- FinanceOps Modal -->
     <div id="financeModal" class="modal">
         <div class="modal-content fullscreen">
-            <div class="modal-header">
-                <h2>FinanceOps+</h2>
-                <span class="close" onclick="closeFinanceOps()">&times;</span>
-            </div>
             <div class="modal-body">
                 <iframe id="financeFrame" src="finopsapp.html" frameborder="0"></iframe>
+            </div>
+            <div class="modal-footer">
+                <h2>FinanceOps+</h2>
+                <span class="close" onclick="closeFinanceOps()">&times;</span>
             </div>
         </div>
     </div>

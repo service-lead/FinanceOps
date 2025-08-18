@@ -333,7 +333,8 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 10px 30px;
-    border-bottom: 1px solid #e5e7eb;
+    background: #AD0BF6;
+    color: white;
 }
 
 .modal-header h2 {
@@ -343,7 +344,7 @@ body {
 }
 
 .close {
-    color: #6b7280;
+    color: white;
     font-size: 2rem;
     font-weight: bold;
     cursor: pointer;
