@@ -333,8 +333,7 @@ body {
     justify-content: space-between;
     align-items: center;
     padding: 10px 30px;
-    background: #AD0BF6;
-    color: white;
+    border-bottom: 1px solid #e5e7eb;
 }
 
 .modal-header h2 {
@@ -344,7 +343,7 @@ body {
 }
 
 .close {
-    color: white;
+    color: #6b7280;
     font-size: 2rem;
     font-weight: bold;
     cursor: pointer;
@@ -356,8 +355,9 @@ body {
 }
 
 .modal-body {
-    height: calc(100% - 60px); /* Subtract header height */
+    height: calc(100%); /* Subtract header height */
     padding: 0;
+    background-color: black;
 }
 
 #financeFrame {
